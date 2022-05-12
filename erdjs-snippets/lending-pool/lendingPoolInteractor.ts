@@ -323,9 +323,10 @@ export class LendingPoolInteractor {
         // In the end, parse the results:
         let { returnCode, firstValue } = this.resultsParser.parseOutcome(transactionOnNetwork, interaction.getEndpoint());
 
-        console.log(`LendingPoolInteractor.deposit(): contract = ${this.contract.getAddress()} Received SDT with nonce = ${returnCode} ${firstValue}`);
+        console.log(`LendingPoolInteractor.deposit(): contract = ${this.contract.getAddress()} Received SDT with nonce = ${firstValue} (return value =  ${returnCode})`);
         let depositNonce = firstValue!.valueOf();
 
+        console.log(`!!!!!!!!!depositNonce = ${depositNonce}`);
         return { returnCode, depositNonce };
     }
 
@@ -355,6 +356,36 @@ export class LendingPoolInteractor {
         let { returnCode, firstValue } = this.resultsParser.parseOutcome(transactionOnNetwork, interaction.getEndpoint());
 
         console.log(`LendingPoolInteractor.withdraw(): contract = ${this.contract.getAddress()}  returnCode = ${returnCode} Received metaESDT with nonce = ${firstValue}`);
+
+        return returnCode;
+    }
+
+    async borrow(user: ITestUser, collateralToken: TokenPayment, assetToBorrow: string): Promise<ReturnCode> {
+        console.log(`LendingPoolInteractor.borrow(): address = ${user.address}, collateralToken = ${collateralToken.toPrettyString()}, assetToBorrow = ${assetToBorrow}`);
+
+
+        // Prepare the interaction
+        let interaction = <Interaction>this.contract.methods
+            .borrow([assetToBorrow])
+            .withGasLimit(15000000)
+            .withSingleESDTNFTTransfer(collateralToken, user.address)
+            .withNonce(user.account.getNonceThenIncrement())
+            .withChainID(this.networkConfig.ChainID);
+
+        // Let's check the interaction, then build the transaction object.
+        let transaction = interaction.check().buildTransaction();
+
+        // Let's sign the transaction. For dApps, use a wallet provider instead.
+        await user.signer.sign(transaction);
+
+        // Let's broadcast the transaction and await its completion:
+        await this.networkProvider.sendTransaction(transaction);
+        let transactionOnNetwork = await this.transactionWatcher.awaitCompleted(transaction);
+
+        // In the end, parse the results:
+        let { returnCode } = this.resultsParser.parseOutcome(transactionOnNetwork, interaction.getEndpoint());
+
+        console.log(`LendingPoolInteractor.borrow(): contract = ${this.contract.getAddress()}  returnCode = ${returnCode}`);
 
         return returnCode;
     }
