@@ -149,7 +149,6 @@ describe("lending snippet", async function () {
         this.timeout(FiveMinutesInMilliseconds);
         this.retries(5);
 
-
         let isSuccess = helperAirdropTokens(session, whale, firstUser, secondUser, "tokenABC");
         assert.isTrue(isSuccess);
     });
