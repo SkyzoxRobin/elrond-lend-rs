@@ -7,7 +7,7 @@ import { createLendingInteractor } from "./lendingPoolInteractor";
 
 export async function helperIssueToken(session: ITestSession, whale: ITestUser, tokenBreadcrumbName: string, tokenName: string) {
     let interactor = await createESDTInteractor(session);
-    await session.saveToken(tokenBreadcrumbName, await interactor.issueFungibleToken(whale, { name: tokenName, ticker: tokenName, decimals: 18, supply: "1000000000000000000000" }));
+    await session.saveToken(tokenBreadcrumbName, await interactor.issueFungibleToken(whale, { name: tokenName, ticker: tokenName, decimals: 18, supply: "100000000000000000000000" }));
 }
 
 export async function helperAddLiquidityPool(session: ITestSession, whale: ITestUser, tokenName: string) {
@@ -81,6 +81,17 @@ export async function helperAirdropTokens(session: ITestSession, whale: ITestUse
     
     await session.syncUsers([whale]);
     await airdrop.sendToEachUser(whale, [firstUser, secondUser], [TokenPayment.fungibleFromAmount(token.identifier, "500", token.decimals)]);
-    
+
+
+export async function helperSetAggregatorForLP(session: ITestSession, whale: ITestUser, tokenName: string) {
+    let token = await session.loadToken(tokenName);
+
+    let lendingAddress = await session.loadAddress("contractAddress");
+    let priceAggregatorAddress = await session.loadAddress("priceAggregatorAddress");
+
+    let lendingInteractor = await createLendingInteractor(session, lendingAddress);
+    let returnCode = await lendingInteractor.setAggregator(whale, token.identifier, priceAggregatorAddress);
+
+    return returnCode.isSuccess();
 }
 
